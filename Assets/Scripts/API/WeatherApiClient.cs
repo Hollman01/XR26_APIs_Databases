@@ -9,17 +9,15 @@ using WeatherApp.Config;
 namespace WeatherApp.Services
 {
     /// <summary>
-    /// Modern API client for fetching weather data
-    /// Students will complete the implementation following async/await patterns
+    /// Modern API client for fetching weather data using async/await
     /// </summary>
     public class WeatherApiClient : MonoBehaviour
     {
         [Header("API Configuration")]
-        [SerializeField] private string baseUrl = "http://api.openweathermap.org/data/2.5/weather";
-        
+        [SerializeField] private string baseUrl = "https://api.openweathermap.org/data/2.5/weather";
+
         /// <summary>
         /// Fetch weather data for a specific city using async/await pattern
-        /// TODO: Students will implement this method
         /// </summary>
         /// <param name="city">City name to get weather for</param>
         /// <returns>WeatherData object or null if failed</returns>
@@ -31,41 +29,68 @@ namespace WeatherApp.Services
                 Debug.LogError("City name cannot be empty");
                 return null;
             }
-            
-            // Check if API key is configured
+
+            // Check if the API key is properly configured
             if (!ApiConfig.IsApiKeyConfigured())
             {
-                Debug.LogError("API key not configured. Please set up your config.json file in StreamingAssets folder.");
+                Debug.LogError("API key not configured. Please set up your config.json file in the StreamingAssets folder.");
                 return null;
             }
-            
-            // TODO: Build the complete URL with city and API key
-            string url = $"";
-            
-            // TODO: Create UnityWebRequest and use modern async pattern
+
+            // Construct the full request URL
+            string apiKey = ApiConfig.OpenWeatherMapApiKey;
+            string url = $"{baseUrl}?q={city}&appid={apiKey}";
+
             using (UnityWebRequest request = UnityWebRequest.Get(url))
             {
-                // TODO: Use async/await, send the request and wait for response
+                // Send the web request and wait asynchronously for the result
+                await request.SendWebRequest();
+
                 
-                // TODO: Implement proper error handling for different result types
-                // Check request.result for Success, ConnectionError, ProtocolError, DataProcessingError
-                
-                // TODO: Parse JSON response using Newtonsoft.Json
-                
-                // TODO: Return the parsed WeatherData object
-                
-                return null; // Placeholder - students will replace this
+
+                // Handle the result of the web request
+                switch (request.result)
+                {
+                    case UnityWebRequest.Result.Success:
+                        try
+                        {
+                            // Parse JSON response into WeatherData object
+                            string json = request.downloadHandler.text;
+                            Debug.Log($"Raw JSON: {json}");
+
+                            WeatherData data = JsonConvert.DeserializeObject<WeatherData>(json);
+                            return data;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Failed to parse weather data: {ex.Message}");
+                            return null;
+                        }
+
+                    case UnityWebRequest.Result.ConnectionError:
+                    Debug.LogError($"Request error: {request.error}");
+                        return null;
+                    case UnityWebRequest.Result.ProtocolError: 
+                    Debug.LogError($"Request error: {request.error}");
+                        return null;
+                    case UnityWebRequest.Result.DataProcessingError:
+                        Debug.LogError($"Request error: {request.error}");
+                        return null;
+
+                    default:
+                        Debug.LogError("Unknown request error");
+                        return null;
+                }
             }
         }
-        
+
         /// <summary>
-        /// Example usage method - students can use this as reference
+        /// Example usage on start: fetch weather for London
         /// </summary>
         private async void Start()
         {
-            // Example: Get weather for London
             var weatherData = await GetWeatherDataAsync("London");
-            
+
             if (weatherData != null && weatherData.IsValid)
             {
                 Debug.Log($"Weather in {weatherData.CityName}: {weatherData.TemperatureInCelsius:F1}°C");

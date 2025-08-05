@@ -47,11 +47,13 @@ namespace WeatherApp.UI
             getWeatherButton.interactable = false;
             SetStatusText("Loading weather data...");
             weatherDisplayText.text = "";
-            
+
             try
             {
                 // TODO: Call API client to get weather data
-              
+
+                var weatherData = await apiClient.GetWeatherDataAsync(cityName);
+                          
                 
                 // TODO: Handle the response
             }
